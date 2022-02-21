@@ -37,7 +37,7 @@ if (option === 2) {
 taskCount = Number(prompt("How many tasks would you like to run? "));
 delay = Number(prompt("What is the retry delay? "));
 if(delay < 500) delay = 500
-quicknode = String(prompt("Quicknode URL(option): ?"));
+quicknode = String(prompt("Quicknode URL(option): "));
 
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Starting task...`);
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Connecting to the solana network...`);
@@ -134,7 +134,7 @@ const createBotURL = async (pubkey) => {
                     response = response.data;
 
                     if(response.external_url) {
-                        console.log(response.external_url)
+                        // console.log(response.external_url)
                         if(response.external_url === userLink) {
                             console.log("**************************************************************");
                             console.log("New Candy Machine Found!");

