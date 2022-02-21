@@ -199,10 +199,10 @@ export async function awaitTransactionSignatureConfirmation(
             confirmations: 0,
           };
           if (result.err) {
-            console.log("Rejected via websocket", result.err);
+            // console.log("Rejected via websocket", result.err);
             reject(status);
           } else {
-            console.log("Resolved via websocket", result);
+            // console.log("Resolved via websocket", result);
             resolve(status);
           }
         },
@@ -224,20 +224,20 @@ export async function awaitTransactionSignatureConfirmation(
             if (!status) {
               // console.log("REST null result for", txid, status);
             } else if (status.err) {
-              console.log("REST error for", txid, status);
+              // console.log("REST error for", txid, status);
               done = true;
               reject(status.err);
             } else if (!status.confirmations) {
-              console.log("REST no confirmations for", txid, status);
+              // console.log("REST no confirmations for", txid, status);
             } else {
-              console.log("REST confirmation for", txid, status);
+              // console.log("REST confirmation for", txid, status);
               done = true;
               resolve(status);
             }
           }
         } catch (e) {
           if (!done) {
-            console.log("REST connection error: txid", txid, e);
+            // console.log("REST connection error: txid", txid, e);
           }
         }
       })();
@@ -249,7 +249,7 @@ export async function awaitTransactionSignatureConfirmation(
   if (connection._signatureSubscriptions[subId])
     connection.removeSignatureListener(subId);
   done = true;
-  console.log("Returning status", status);
+  // console.log("Returning status", status);
   return status;
 }
 export function sleep(ms){
