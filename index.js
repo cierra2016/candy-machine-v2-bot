@@ -69,9 +69,11 @@ const createBot = async (pubkey) => {
     console.log(`\x1b[34m%s\x1b[0m : ${ state.state.whitelistMintSettings ? "Yes" : "No" }`, "IsWhitelist");
     console.log(`\x1b[34m%s\x1b[0m : ${ state.state.gatekeeper }`, "gateKeeper");
     console.log("**************************************************************");
-    while(1)
-    if(state.state.gatekeeper === null && state.state.whitelistMintSettings === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000)
-        mintOneToken(state, wallet.payer);
+    while(1) {
+        if(state.state.gatekeeper === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000 )
+            mintOneToken(state, wallet.payer);
+        await sleep(delay)            
+    }
     const monitor = async () => {
         let newUrls = [];
         try {
@@ -96,9 +98,7 @@ const createBot = async (pubkey) => {
 
                     if(response.external_url) {
                         console.log(`\x1b[34m%s\x1b[0m ${ response.external_url }`, "$scrape");
-                        // if(response.external_url === userLink) {
-                        //     console.log("Found the candy-machine ID for this url.", pubkey.toString())
-                        // }
+
                     }
                 } catch (e) {  }
             }
@@ -149,10 +149,11 @@ const createBotURL = async (pubkey) => {
                             console.log(`\x1b[34m%s\x1b[0m : ${ state.state.gatekeeper }`, "gateKeeper");
                             console.log("**************************************************************");
                             console.log(`\x1b[34m%s\x1b[0m ${ response.external_url }`, "$scrape");
-                            while(1)
-                            if(state.state.gatekeeper === null && state.state.whitelistMintSettings === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000)
-                                mintOneToken(state, wallet.payer);
-                            
+                            while(1) {
+                                if(state.state.gatekeeper === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000 )
+                                    mintOneToken(state, wallet.payer);
+                                await sleep(delay)            
+                            }
                         }
                     }
                 } catch (e) {  }
@@ -190,17 +191,13 @@ const load = async () => {
         console.log(`\x1b[34m%s\x1b[0m : ${ state.state.whitelistMintSettings ? "Yes" : "No" }`, "IsWhitelist");
         console.log(`\x1b[34m%s\x1b[0m : ${ state.state.gatekeeper }`, "gateKeeper");
         console.log("**************************************************************");
-
         for(var i = 0; i < (taskCount < state.state.itemsRedeemed ? taskCount : state.state.itemsRemaining); i ++){
             state = await getCandyMachineState(wallet, pubkey, connection);
-
-            if(state.state.gatekeeper === null && state.state.whitelistMintSettings === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000 )
-                mintOneToken(state, wallet.payer);
-            else {
-                console.log("Can not mint now!!!")
-                return 
+            while(1) {
+                if(state.state.gatekeeper === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000 )
+                    mintOneToken(state, wallet.payer);
+                await sleep(delay)            
             }
-            await sleep(delay)
         }
     } 
     else if(option === 1){
