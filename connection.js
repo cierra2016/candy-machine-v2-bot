@@ -1,6 +1,6 @@
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 export const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID =
-    new PublicKey('74vKcpJbLZqJ6ZSXm2ZSCsggR1MWSZFXUTk3NWLdeJvp');
+    new PublicKey('seePnGAMWiWBfJDa3zQMorKCytwXGuwQkTtB7UHQpsx');
 export const sendTransactions = async (
   connection,
   wallet,
