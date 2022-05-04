@@ -38,11 +38,10 @@ taskCount = Number(prompt("How many tasks would you like to run? "));
 delay = Number(prompt("What is the retry delay? "));
 if(delay < 500) delay = 500
 quicknode = String(prompt("Quicknode URL(option): "));
-
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Starting task...`);
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Connecting to the solana network...`);
 if(quicknode === "")
-connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl('mainnet-beta'));
+connection = new anchor.web3.Connection('https://broken-sparkling-butterfly.solana-mainnet.quiknode.pro/682b281516b2676b74848a5a32618fff20576706/');
 else connection = new anchor.web3.Connection(quicknode)
 console.log("\x1b[33m%s\x1b[0m", `[${ new Date() }] Connected to cluster!`);
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Connecting wallet...`);
@@ -172,7 +171,9 @@ const load = async () => {
             await createBot(account.pubkey);
             await sleep(delay);
         };
-    } catch(e) {}
+    } catch(e) {
+        console.log(e)
+    }
     else if(option === 2){
 
         // await createBot(new PublicKey(target_candy_machine_id));
