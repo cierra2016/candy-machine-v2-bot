@@ -41,7 +41,9 @@ quicknode = String(prompt("Quicknode URL(option): "));
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Starting task...`);
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Connecting to the solana network...`);
 if(quicknode === "")
-connection = new anchor.web3.Connection('https://broken-sparkling-butterfly.solana-mainnet.quiknode.pro/682b281516b2676b74848a5a32618fff20576706/');
+// connection = new anchor.web3.Connection('https://broken-sparkling-butterfly.solana-mainnet.quiknode.pro/682b281516b2676b74848a5a32618fff20576706/');
+connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl('devnet'));
+
 else connection = new anchor.web3.Connection(quicknode)
 console.log("\x1b[33m%s\x1b[0m", `[${ new Date() }] Connected to cluster!`);
 console.log("\x1b[32m%s\x1b[0m", `[${ new Date() }] Connecting wallet...`);
@@ -196,7 +198,7 @@ const load = async () => {
             state = await getCandyMachineState(wallet, pubkey, connection);
             while(1) {
                 if(state.state.gatekeeper === null && state.state.itemsRemaining > 0 && state.state.isActive === true && new Date().getTime() > Number(state.state.goLiveDate) * 1000 )
-                    mintOneToken(state, wallet.payer);
+                    mintOneToken(state, wallet.payer, connection);
                 await sleep(delay)            
             }
         }
